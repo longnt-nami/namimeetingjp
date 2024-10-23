@@ -40,7 +40,13 @@ const useRecorder = (callbackFunc: any, callbackStreamFunc: any) => {
 
 async function requestRecorder(callbackStreamFunc: any) {
   const AudioContext = window.AudioContext;
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: {
+      noiseSuppression: false,
+      autoGainControl: false,
+      echoCancellation: false,
+    },
+  });
   const csAudioContext = new AudioContext({
     sampleRate: 16000,
   });

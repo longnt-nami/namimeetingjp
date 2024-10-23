@@ -17,7 +17,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "tsc --noEmit && eslint src --ignore-pattern 'src/public' --max-warnings 0",
+    "lint:fix": "tsc --noEmit && eslint src --ignore-pattern 'src/public' --fix"
   },
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
