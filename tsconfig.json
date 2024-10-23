@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    // "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "target": "es2015",
+    // or
+    "downlevelIteration": true,
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -26,17 +25,10 @@
         "name": "next"
       }
     ],
-    "typeRoots": [
-      "./node_modules/@types",
-      "./src/@types"
-    ],
+    "typeRoots": ["./node_modules/@types", "./src/@types"],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "#/*": [
-        "./public/*"
-      ]
+      "@/*": ["./src/*"],
+      "#/*": ["./public/*"]
     }
   },
   "include": [
@@ -49,11 +41,7 @@
     "src/**/*.tsx",
     ".next/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    ".next"
-  ],
+  "exclude": ["node_modules", "dist", ".next"],
   "ts-node": {
     "compilerOptions": {
       "module": "commonjs"

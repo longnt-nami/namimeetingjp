@@ -1,80 +1,171 @@
-import Footer from '@/modules/Home/components/Footer';
-import JokeList from '@/modules/Joke/components/JokeList';
-import Image from '@/packages/components/base/Images/Image';
-import ButtonLink from '@/packages/components/base/Navigations/ButtonLink';
-import NextLink from '@/packages/components/base/Navigations/NextLink';
-
-import styles from './Home.page.module.css';
-
+"use client";
+import Image from "next/image";
+import { Empty, NoContent } from "@/modules/Home/components/Empty";
+import useRecorder from "@/modules/Home/hooks/recorder-hook";
+import { ListRecords } from "@/modules/Home/components/ListRecords";
+import { Button } from "antd";
+import { PauseOutlined } from "@ant-design/icons";
+import { LiveAudioVisualizer } from "react-audio-visualize";
+import { useEffect, useRef, useState } from "react";
+import { Header } from "@/packages/components/Header";
 function HomePage() {
+  useEffect(() => {}, []);
+
+  const [selectedType, setSelectedType] = useState("");
+  const [isHandling, setIsHandling] = useState(false);
+  const [text, setText] = useState("");
+  const [data, setData] = useState<any[]>([]);
+  const wsRef = useRef<any>(null);
+
+  const handleData = (e: any) => {
+    console.log(URL.createObjectURL(e.data));
+  };
+
+  const handleStreamData = (e: any) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(e);
+    }
+  };
+
+  const [isRecording, startRecording, stopRecording, recorder] = useRecorder(
+    handleData,
+    handleStreamData
+  );
+
+  const insertData = async (data: any) => {
+    try {
+      const res = await fetch("/api/transcript", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const dataJson = await res.json();
+
+      console.log(dataJson);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const createMeeting = async () => {
+    const now = new Date().toDateString();
+    try {
+      const res = await fetch("/api/meeting", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: now,
+        }),
+      });
+
+      const jsonRes = await res.json();
+
+      console.log(jsonRes);
+      return jsonRes;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleRecord = async () => {
+    setIsHandling(true);
+    if (isRecording) {
+      stopRecording();
+      wsRef.current.close();
+      setData([]);
+
+      return;
+    } else {
+      const resp = await createMeeting();
+      const id = resp?.payload?.insertedId;
+      if (!id) return;
+
+      startRecording();
+      wsRef.current = new WebSocket(process.env.NEXT_PUBLIC_WSS_URL || "");
+      wsRef.current.onopen = () => {
+        console.log("WebSocket connection opened.");
+      };
+
+      wsRef.current.onmessage = async (event: any) => {
+        const data = event.data;
+
+        // Append data to current text with new line
+        let transcript = JSON.parse(data);
+        await insertData({ ...transcript, meetingId: id });
+        setData((prev) => [
+          {
+            ...transcript,
+            date: new Date(),
+          },
+          ...prev,
+        ]);
+        // transcript = transcript.transcript_norm;
+        // setText((prevText) => prevText + transcript + "\n");
+      };
+
+      wsRef.current.onclose = () => {
+        console.log("WebSocket connection closed.");
+      };
+
+      wsRef.current.onerror = (error: any) => {
+        console.error("WebSocket error:", error);
+      };
+    }
+  };
+
   return (
-    <div className={styles.container}>
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+    <div className={""}>
+      <Header />
 
-        <Image
-          effect="blur"
-          src="https://gading.dev/media/banners/1.jpg"
-          width={500}
-          alt="Vercel Logo"
-          className="flex justify-center items-center min-h-[150px] sm:min-h-[300px] rounded h-full object-fit"
-          wrapperClassName="mt-10 max-w-full -mb-10 rounded"
-        />
-
-        <p className={styles.description}>
-          Visit the demo API{' '}
-          <NextLink href="/api/jokes">
-            <code className={styles.code}>/api/jokes</code>
-          </NextLink>
-        </p>
-
-        <ButtonLink className="bg-fuchsia-400 text-center mt-5" href="/about?text=Hello%20World">
-          About Page
-        </ButtonLink>
-
-        <hr className="w-full max-w-lg my-8" />
-
-        <ButtonLink className="bg-blue-500 mb-8 text-center" href="https://github.com/gadingnst/fullstack-next-template/generate">
-          Use this Template
-        </ButtonLink>
-
-        {/* Example calling Server Component inside Server Component */}
-        <JokeList />
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h2>Learn &rarr;</h2>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className={styles.card}
-          >
-            <h2>Examples &rarr;</h2>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h2>Deploy &rarr;</h2>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+      <div className="px-3 ">
+        <div
+          className="mt-4 h-full rounded-md"
+          style={{
+            border: "1px solid rgba(0, 0, 0, 0.1",
+          }}
+        >
+          {!isRecording ? (
+            <div
+              style={{
+                height: "calc(100vh - 200px)",
+              }}
+            >
+              <NoContent startRecorder={handleRecord} />
+            </div>
+          ) : (
+            <div>
+              <div
+                style={{
+                  height: "calc(100vh - 200px)",
+                }}
+                className="overflow-y-auto overflow-x-hidden h-full"
+              >
+                <ListRecords data={data} />
+              </div>
+            </div>
+          )}
         </div>
-      </main>
+      </div>
 
-      <Footer />
+      {isRecording && (
+        <div className="p-3">
+          <Button type="primary" size="large" onClick={handleRecord}>
+            <PauseOutlined /> Dừng ghi âm
+          </Button>
+          {/* {recorder && (
+            <LiveAudioVisualizer
+              mediaRecorder={recorder}
+              width={200}
+              height={75}
+            />
+          )} */}
+        </div>
+      )}
     </div>
   );
 }

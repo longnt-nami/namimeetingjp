@@ -3,25 +3,17 @@ import {
   type Document,
   type Collection,
   MongoClient,
-  ObjectId
-} from 'mongodb';
+  ObjectId,
+} from "mongodb";
 
-import {
-  DB_HOST,
-  DB_USER,
-  DB_NAME,
-  DB_PASSWORD,
-  IS_DEV
-} from '@/configs/env';
+import { DB_HOST, DB_USER, DB_NAME, DB_PASSWORD, IS_DEV } from "@/configs/env";
 
-const MONGODB_URI =
-  `mongodb+srv://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}?retryWrites=true&w=majority`;
+const MONGODB_URI = `mongodb+srv://${DB_USER}:${DB_PASSWORD}@${DB_HOST}?retryWrites=true&w=majority&appName=${DB_NAME}`;
 
 const globalAny: any = global;
 
 abstract class Model<T> {
   protected abstract collectionName: string;
-
   /**
    * In development mode, use a global variable so that the value is preserved across module reloads caused by HMR (Hot Module Replacement).
    * In production mode, it's best to not use a global variable.
@@ -52,19 +44,25 @@ abstract class Model<T> {
     return this.withFields(data);
   }
 
+  public async allWithParams(filter?: any, sort?: any): Promise<T[]> {
+    const collection = await this.connect();
+    const data = await collection.find(filter).sort(sort).toArray();
+    return this.withFields(data);
+  }
+
   public async insert(data: T) {
     const collection = await this.connect();
     const insert = await collection.insertOne(data as any);
     return insert;
   }
 
-  public async getById(id: number|string): Promise<T> {
+  public async getById(id: number | string): Promise<T> {
     const collection = await this.connect();
     const data = await collection.findOne({ _id: new ObjectId(id) });
     return this.withFields(data);
   }
 
-  public async updateById(id: number|string|ObjectId, data: Partial<T>) {
+  public async updateById(id: number | string | ObjectId, data: Partial<T>) {
     const collection = await this.connect();
     const result = await collection.updateOne(
       { _id: new ObjectId(id) },
@@ -74,7 +72,7 @@ abstract class Model<T> {
     return result;
   }
 
-  public async deleteById(id: number|string|ObjectId) {
+  public async deleteById(id: number | string | ObjectId) {
     const collection = await this.connect();
     const result = await collection.deleteOne({ _id: new ObjectId(id) });
     return result;
