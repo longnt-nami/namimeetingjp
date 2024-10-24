@@ -1,15 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-const useRecorder = (callbackFunc: any, callbackStreamFunc: any) => {
+const useRecorder = (
+  callbackFunc: any,
+  callbackStreamFunc: any,
+  deviceId: string
+) => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [recorder, setRecorder] = useState<MediaRecorder | null>(null);
-
+  const gainNodeRef = useRef<any>(null);
+  const recorderRef = useRef<any>(null);
   useEffect(() => {
     if (recorder === null) {
       if (isRecording) {
-        requestRecorder(callbackStreamFunc).then(setRecorder, console.error);
+        requestRecorder(
+          callbackStreamFunc,
+          deviceId,
+          gainNodeRef,
+          recorderRef
+        ).then(setRecorder, console.error);
       }
       return;
     }
@@ -22,7 +32,7 @@ const useRecorder = (callbackFunc: any, callbackStreamFunc: any) => {
 
     recorder.addEventListener("dataavailable", callbackFunc);
     return () => recorder.removeEventListener("dataavailable", callbackFunc);
-  }, [recorder, isRecording]);
+  }, [recorder, isRecording, deviceId]);
 
   const startRecording = () => setIsRecording(true);
   const stopRecording = () => {
@@ -31,6 +41,7 @@ const useRecorder = (callbackFunc: any, callbackStreamFunc: any) => {
       console.log(track);
       track.stop();
     });
+    recorderRef?.current?.getTracks()[0].stop();
     setRecorder(null);
     setIsRecording(false);
   };
@@ -38,19 +49,27 @@ const useRecorder = (callbackFunc: any, callbackStreamFunc: any) => {
   return [isRecording, startRecording, stopRecording, recorder] as const;
 };
 
-async function requestRecorder(callbackStreamFunc: any) {
+async function requestRecorder(
+  callbackStreamFunc: any,
+  deviceId: string,
+  gainNodeRef: any,
+  recorderRef: any
+) {
   const AudioContext = window.AudioContext;
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
       noiseSuppression: false,
       autoGainControl: false,
       echoCancellation: false,
+      deviceId: deviceId,
     },
   });
+  recorderRef.current = stream;
   const csAudioContext = new AudioContext({
     sampleRate: 16000,
   });
-
+  gainNodeRef.current = csAudioContext.createGain();
+  // gainNodeRef.current.gain.value = 2;
   const source = csAudioContext.createMediaStreamSource(stream);
   const dest = csAudioContext.createMediaStreamDestination();
   const dest2 = csAudioContext.createMediaStreamDestination();
@@ -67,6 +86,7 @@ async function requestRecorder(callbackStreamFunc: any) {
   source.connect(processor);
   processor.connect(dest);
   source.connect(dest2);
+  // source.connect(gainNodeRef.current);
 
   processor.onaudioprocess = (e) => {
     const channel = e.inputBuffer.getChannelData(0);

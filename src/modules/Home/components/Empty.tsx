@@ -1,5 +1,5 @@
 import { AudioOutlined } from "@ant-design/icons";
-import { Button } from "antd";
+import { Button, Input, Select } from "antd";
 
 export const Empty = () => {
   return (
@@ -93,16 +93,59 @@ export const Empty = () => {
   );
 };
 
-export const NoContent = ({ startRecorder }: { startRecorder: () => void }) => {
+export const NoContent = ({
+  startRecorder,
+  name,
+  setName,
+  devices,
+  setAudioInput,
+  audioInput,
+}: {
+  startRecorder: () => void;
+  name: string;
+  setName: (s: string) => void;
+  devices: any[];
+  setAudioInput: (a: string) => void;
+  audioInput: string | undefined;
+}) => {
   return (
     <div className="flex flex-col items-center justify-center h-full">
       <Empty />
       <p className="font-semibold">Chưa có bản ghi</p>
       <p className="text-sm">Nhấn Bắt đầu ghi đề tiến hành quá trình ghi</p>
-      <Button className="mt-6" type="primary" onClick={startRecorder}>
-        <AudioOutlined />
-        Bắt đầu ghi âm
-      </Button>
+      <div className="mt-[50px]">
+        <div
+          className="mt-2 flex items-center gap-3"
+          style={{ marginTop: "20px" }}
+        >
+          <p className="text-center text-sm font-semibold">Meeting name:</p>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            style={{ width: "200px" }}
+          />
+        </div>
+
+        <div
+          className="mt-2 flex items-center gap-3"
+          style={{ marginTop: "20px" }}
+        >
+          <p className="text-center text-sm font-semibold">Audio Input:</p>
+          <Select
+            options={devices?.map((item) => ({
+              label: item?.label,
+              value: item?.deviceId,
+            }))}
+            value={audioInput}
+            style={{ width: "500px" }}
+            onChange={(v) => setAudioInput(v)}
+          />
+        </div>
+        <Button className="mt-6" type="primary" onClick={startRecorder}>
+          <AudioOutlined />
+          Bắt đầu ghi âm
+        </Button>
+      </div>
     </div>
   );
 };

@@ -6,6 +6,7 @@ import { AnyObject } from "antd/es/_util/type";
 import { ColumnsType } from "antd/es/table";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import dayjs from "dayjs";
 
 export const Meetings = () => {
   const [data, setData] = useState<any[]>([]);
@@ -41,6 +42,18 @@ export const Meetings = () => {
       render(value, record, index) {
         return (
           <Link href={"/meeting?meetingId=" + record?._id}>{record?.name}</Link>
+        );
+      },
+    },
+    {
+      title: "Created At",
+      render(value, record, index) {
+        return (
+          <div>
+            {record?.createdAt
+              ? dayjs(record?.createdAt)?.format("DD/MM/YYYY")
+              : "Unknown"}
+          </div>
         );
       },
     },
