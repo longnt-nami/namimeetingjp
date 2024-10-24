@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Empty, NoContent } from "@/modules/Home/components/Empty";
 import useRecorder from "@/modules/Home/hooks/recorder-hook";
 import { ListRecords } from "@/modules/Home/components/ListRecords";
-import { Button, Select } from "antd";
+import { Button, message, Select } from "antd";
 import { PauseOutlined } from "@ant-design/icons";
 import { LiveAudioVisualizer } from "react-audio-visualize";
 import { useEffect, useRef, useState } from "react";
@@ -138,6 +138,7 @@ function HomePage() {
       };
 
       wsRef.current.onclose = () => {
+        message.error("Socket error");
         console.log("WebSocket connection closed.");
         stopRecording();
       };
